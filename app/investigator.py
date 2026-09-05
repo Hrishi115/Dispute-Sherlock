@@ -1,37 +1,88 @@
-from app.models import InvestigationCase, InvestigationResult
+from app.models import InvestigationCase, Evidence, InvestigationAnalysis
 
-def investigator(case: InvestigationCase) -> InvestigationResult:
-    evidence = []
+def analyze_case(case: InvestigationCase) -> InvestigationAnalysis:
+
     contradictions = []
+    missing_evidence = []
+    timeline_anomalies = []
 
-    if case.payment.status == "captured":
-        evidence.append({
-            "source": "payment",
-            "fact": "Payment was successfully captured"
-        })
+    evidence = case.merchant_evidence
 
-    if case.merchant_evidence.delivery_status == "delivered":
-        evidence.append({
-            "source": "merchant",
-            "fact": "Merchant evidence says that the order was delivered"
-        })
-
-    if (case.dispute.reason == "product not recieved" and case.merchant_evidence.delivery_status == "delivered"):
-        return InvestigationResult(
-            verdict = "MERCHANT_FAVOURED",
-            confidence = 0.90,
-            summary= "Available evidence proves that the disputed order was delivered",
-            evidence=evidence,
-            contradictions=contradictions,
-            recommended_action="contest the dispute with delivery evidence"
+    if not evidence.delivery_status:
+        missing_evidence.append(
+            "Merchant has not provided a delivery status"
         )
 
-    return InvestigationResult(
-        verdict = "INCONCLUSIVE",
-        confidence= 0.40,
-        summary = "There is not sufficient evidence to determine the outcome confidently",
-        evidence=evidence,
-        contradictions= contradictions,
-        recommended_action="Request more evidence from the merchant"
+    if not evidence.delivery_date:
+        missing_evidence.append(
+            "Merchant has not provided a delivery date"
+        )
+
+    if not evidence.tracking_number:
+        missing_evidence.append(
+            "No tracking number was provided"
+        )
+
+    if not evidence.order_id:
+        missing_evidence.append(
+            "No order ID was provided"
+        )
+
+
+
+    delivery_before_dispute = next(
+        (
+            fact for fact in case.derived_facts
+            if fact.fact == "Delivery occurred before dispute was opened"
+        ),
+        None
     )
 
+    if delivery_before_dispute and not delivery_before_dispute.value:
+        timeline_anomalies.append(
+            "Delivery occurred after the dispute was opened."
+        )
+
+    payment_before_delivery = next(
+        (
+            fact for fact in case.derived_facts
+            if fact.fact == "Payment occurred before delivery"
+        ),
+        None
+    )
+
+    if payment_before_delivery and not payment_before_delivery.value:
+        timeline_anomalies.append(
+            "Delivery occurred before payment."
+        )
+
+
+
+    delivery_claimed = (
+    evidence.delivery_status
+    and "delivered" in evidence.delivery_status.lower()
+)
+
+    if (
+        delivery_claimed
+        and not evidence.delivery_date
+    ):
+        contradictions.append(
+            "Merchant claims the order was delivered, "
+            "but no delivery date was provided."
+        )
+
+    if (
+        case.dispute.reason == "product_not_received"
+        and delivery_claimed
+    ):
+        contradictions.append(
+            "Customer claims the product was not received, "
+            "while merchant evidence indicates that it was delivered."
+        )
+
+    return InvestigationAnalysis(
+        missing_evidence=missing_evidence,
+        contradictions=contradictions,
+        timeline_anomalies=timeline_anomalies
+    )

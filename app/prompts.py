@@ -1,4 +1,4 @@
-from app.models import InvestigationCase
+from app.models import InvestigationCase, InvestigationAnalysis
 
 SYSTEM_PROMPT = """
 You are Dispute Sherlock, an AI payment dispute investigator.
@@ -39,7 +39,7 @@ Do not return headings.
 Do not return explanations outside the structured result.
 """
 
-def build_investigation_prompt(case: InvestigationCase) -> str:
+def build_investigation_prompt(case: InvestigationCase, analysis: InvestigationAnalysis) -> str:
 
     timeline = "\n".join(
         f"- {event.date}: {event.event} (source: {event.source})"
@@ -51,6 +51,21 @@ def build_investigation_prompt(case: InvestigationCase) -> str:
         f"(sources: {', '.join(fact.sources)})"
         for fact in case.derived_facts
     )
+
+    missing_evidence = "\n".join(
+        f"- {item}"
+        for item in analysis.missing_evidence
+    ) or "- None identified"
+
+    contradictions = "\n".join(
+        f"- {item}"
+        for item in analysis.contradictions
+    ) or "- None identified"
+
+    timeline_anomalies = "\n".join(
+        f"- {item}"
+        for item in analysis.timeline_anomalies
+    ) or "- None identified"
 
     return f"""
 Investigate the following payment dispute.
@@ -79,13 +94,42 @@ Tracking number: {case.merchant_evidence.tracking_number}
 CASE TIMELINE:
 {timeline}
 
-DETERMINISTICALLY DERIVED FACTS:
+DETERMINISTIC INVESTIGATION ANALYSIS:
+
+ESTABLISHED FACTS:
 {derived_facts}
 
-Use the timeline and derived facts as established facts.
+MISSING EVIDENCE:
+{missing_evidence}
+
+CONTRADICTIONS:
+{contradictions}
+
+TIMELINE ANOMALIES:
+{timeline_anomalies}
+
+The deterministic investigation analysis contains facts and
+flags calculated by the application.
+
+Treat established facts as established.
+
+Consider missing evidence when determining confidence.
+
+Consider contradictions and timeline anomalies when determining
+the verdict.
+
+Do not invent evidence that is not present.
 Your job is to reason about what these facts mean in relation to
 the customer's claim and merchant's evidence.
 
 Do not recalculate or contradict deterministic facts unless the
 underlying evidence itself is contradictory.
+
+The recommended_action field must describe the next operational
+step to take, not repeat the verdict.
+
+Examples:
+- Merchant favoured → "Contest the dispute using the available delivery evidence."
+- Customer favoured → "Accept the dispute and process the appropriate refund."
+- Inconclusive → "Request additional evidence from the merchant."
 """

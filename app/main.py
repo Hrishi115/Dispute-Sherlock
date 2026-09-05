@@ -6,6 +6,7 @@ load_dotenv()
 
 from app.models import InvestigationCase, InvestigationResult, DisputeInput
 from app.normalizer import normalize_case
+from app.investigator import analyze_case
 from app.prompts import build_investigation_prompt, SYSTEM_PROMPT
 
 app = FastAPI()
@@ -21,13 +22,22 @@ async def health_check():
 @app.post("/investigate")
 async def investigate(data: DisputeInput):
 
+    print("1. Request Recieved")
     case = normalize_case(
         data.dispute,
         data.payment,
         data.merchant_evidence
     )
 
-    prompt = build_investigation_prompt(case)
+    print("2. Normalization complete")
+
+    analysis = analyze_case(case)
+
+    print("3. Analysis complete")
+
+    prompt = build_investigation_prompt(case, analysis)
+
+    print("4. Prompt built")
 
     response = client.chat.send(
     model="openai/gpt-oss-20b",
@@ -106,7 +116,11 @@ async def investigate(data: DisputeInput):
         }
     )
 
+    print("5. LLM response received")
+
     result = InvestigationResult.model_validate_json(response.choices[0].message.content)
+
+    print("6. Result validated")
     
     return result
 

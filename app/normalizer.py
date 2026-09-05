@@ -1,4 +1,11 @@
-from app.models import Dispute, Payment, MerchantEvidence, InvestigationResult, InvestigationCase, TimelineEvent, DerivedFact
+from app.models import (
+    Dispute,
+    Payment,
+    MerchantEvidence,
+    InvestigationCase,
+    TimelineEvent,
+    DerivedFact
+)
 
 
 def normalize_case(
@@ -35,7 +42,7 @@ def normalize_case(
         source="dispute"
     ))
 
-    timeline.sort(key=lambda event:event.date)
+    timeline.sort(key=lambda event: event.date)
 
     derived_facts = []
 
@@ -51,17 +58,25 @@ def normalize_case(
         sources=["merchant_evidence.delivery_status"]
     ))
 
-    derived_facts.append(DerivedFact(
-        fact="Payment occured before delivery",
-        value=merchant_evidence.delivery_date >= payment.created_at,
-        sources=["merchant_evidence.delivery_date", "payment.created_at"]
-    ))
+    if merchant_evidence.delivery_date:
 
-    derived_facts.append(DerivedFact(
-        fact="Delivery occured before dispute was opened",
-        value=merchant_evidence.delivery_date <= dispute.created_at,
-        sources=["merchant_evidence.delivery_date", "dispute.created_at"]
-    ))
+        derived_facts.append(DerivedFact(
+            fact="Payment occurred before delivery",
+            value=merchant_evidence.delivery_date >= payment.created_at,
+            sources=[
+                "merchant_evidence.delivery_date",
+                "payment.created_at"
+            ]
+        ))
+
+        derived_facts.append(DerivedFact(
+            fact="Delivery occurred before dispute was opened",
+            value=merchant_evidence.delivery_date <= dispute.created_at,
+            sources=[
+                "merchant_evidence.delivery_date",
+                "dispute.created_at"
+            ]
+        ))
 
     return InvestigationCase(
         dispute=dispute,
