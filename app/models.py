@@ -22,11 +22,12 @@ class MerchantEvidence(BaseModel):
     delivery_status: Optional[str] = None
     delivery_date: Optional[datetime] = None
     tracking_number: Optional[str] = None
-    order_created_at: datetime
+    order_created_at: Optional[datetime] = None
 
     @field_validator(
         "delivery_date",
         "tracking_number",
+        "order_created_at",
         mode="before"
     )
     @classmethod
