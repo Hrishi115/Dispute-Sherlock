@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Literal
 
 class Payment(BaseModel):
     payment_id: str
@@ -24,4 +24,15 @@ class InvestigationCase(BaseModel):
     dispute: Dispute
     payment: Payment
     merchant_evidence: MerchantEvidence
-    
+
+class Evidence(BaseModel):
+    source: str
+    fact: str
+
+class InvestigationResult(BaseModel):
+    verdict: Literal["MERCHANT_FAVOURED", "CUSTOMER_FAVOURED", "INCONCLUSIVE"]
+    confidence: float
+    summary: str
+    evidence: List[Evidence]
+    contradictions: List[str]
+    recommended_action: str
