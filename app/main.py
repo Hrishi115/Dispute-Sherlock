@@ -1,12 +1,12 @@
 from fastapi import FastAPI
-from app.models import InvestigationCase, InvestigationResult
-# from app.investigator import investigator
-from app.prompts import build_investigation_prompt, SYSTEM_PROMPT
 from openrouter import OpenRouter
-import json
 import os
 from dotenv import load_dotenv
 load_dotenv()
+
+from app.models import InvestigationCase, InvestigationResult, DisputeInput
+from app.normalizer import normalize_case
+from app.prompts import build_investigation_prompt, SYSTEM_PROMPT
 
 app = FastAPI()
 
@@ -19,7 +19,13 @@ async def health_check():
     return {"status":"ok"}
 
 @app.post("/investigate")
-async def investigate(case: InvestigationCase):
+async def investigate(data: DisputeInput):
+
+    case = normalize_case(
+        data.dispute,
+        data.payment,
+        data.merchant_evidence
+    )
 
     prompt = build_investigation_prompt(case)
 
@@ -46,8 +52,8 @@ async def investigate(case: InvestigationCase):
                     "verdict": {
                         "type": "string",
                         "enum": [
-                            "MERCHANT_FAVORED",
-                            "CUSTOMER_FAVORED",
+                            "MERCHANT_FAVOURED",
+                            "CUSTOMER_FAVOURED",
                             "INCONCLUSIVE"
                         ]
                     },
@@ -104,4 +110,4 @@ async def investigate(case: InvestigationCase):
     
     return result
 
-    # return response.choices[0].message.content
+    # return case.model_dump_json()

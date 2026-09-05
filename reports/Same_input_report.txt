@@ -1,0 +1,104 @@
+Input 1: 
+{
+  "dispute": {
+    "dispute_id": "DSP_1002",
+    "reason": "product_not_received",
+    "customer_claim": "I paid for the backpack but the order never arrived.",
+    "created_at": "2026-09-04"
+  },
+
+  "payment": {
+    "payment_id": "pay_1002",
+    "amount": 2499,
+    "currency": "INR",
+    "status": "captured",
+    "method": "UPI",
+    "created_at": "2026-09-01"
+  },
+
+  "merchant_evidence": {
+    "order_id": "ORD_1002",
+    "product_description": "Travel backpack",
+    "order_created_at": "2026-09-01",
+    "delivery_status": "delivered",
+    "delivery_date": "2026-09-02",
+    "tracking_number": "TRK998877"
+  }
+}
+
+Output 1: 
+{ 
+    "verdict": "MERCHANT_FAVOURED", 
+    "confidence": 0.9, 
+    "summary": "Merchant’s evidence that the backpack was delivered on 2026‑09‑02, with a tracking number, directly contradicts the customer’s claim of non‑receipt. No evidence is presented to contest the delivery status or to show that the customer never received the product. The payment and delivery dates clearly precede the dispute opening, providing strong support for the merchant’s position. There is no contradiction or missing critical evidence that would challenge the delivered status. Hence the available evidence materially favors the merchant.", 
+    "evidence": [ 
+        { 
+            "source": "merchant_evidence", 
+            "fact": "delivery_status: delivered" 
+        }
+    ], 
+    "contradictions": [], 
+    "recommended_action": "merchant_win" 
+}
+
+output 2: 
+{
+  "verdict": "MERCHANT_FAVOURED",
+  "confidence": 0.7,
+  "summary": "The merchant provides a clear delivery record with a delivery status of 'delivered' on 2026-09-02, prior to the dispute opening. No evidence from the customer contradicts this, and no additional proof of non-receipt is presented. Thus, the available evidence materially supports the merchant's position.",
+  "evidence": [
+    {
+      "source": "merchant_evidence",
+      "fact": "delivery_status=delivered"
+    },
+    {
+      "source": "merchant_evidence",
+      "fact": "delivery_date=2026-09-02"
+    }
+  ],
+  "contradictions": [],
+  "recommended_action": "No review needed. Dispute should be resolved in favor of merchant."
+}
+
+output 3: 
+RESULT SCHEMA MISMATCH
+
+output 4: 
+{
+  "verdict": "MERCHANT_FAVOURED",
+  "confidence": 0.8,
+  "summary": "The merchant’s evidence records a delivery on 2026‑09‑02 with a tracking number, and the payment was captured before the delivery. No evidence from the customer indicates that the item was actually not received, nor any counter‑evidence that the delivery failed. Hence the available evidence materially supports the merchant’s claim of delivery.",
+  "evidence": [
+    {
+      "source": "merchant_evidence",
+      "fact": "Order marked as delivered on 2026‑09‑02 with tracking number TRK998877"
+    },
+    {
+      "source": "payment",
+      "fact": "Payment captured on 2026‑09‑01"
+    },
+    {
+      "source": "dispute",
+      "fact": "Dispute opened 2026‑09‑04, stating product not received"
+    }
+  ],
+  "contradictions": [],
+  "recommended_action": "No dispute resolution needed; refund not warranted based on available evidence."
+}
+
+output 5: 
+{
+  "verdict": "INCONCLUSIVE",
+  "confidence": 0.73,
+  "summary": "}? Accuracy...???...",
+  "evidence": [
+    {
+      "source": "payment ? & R?　???…....",
+      "fact": "Payment was successfully captured."
+    }
+  ],
+  "contradictions": [
+    ""
+  ],
+  "recommended_action": "Not neither ..?????."
+}
